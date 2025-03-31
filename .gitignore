@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# Model files
+*.h5
+*.pkl
+
+# Logs
+*.log
+
+# IDE
+.idea/
+.vscode/
+
+# Flask
+instance/
+.webassets-cache
+
+# Uploaded test images
+uploads/ 

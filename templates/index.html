@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASL Recognition</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+    }
+    .container {
+      margin-top: 20px;
+    }
+    .input-section {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+    .btn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .btn:hover {
+      background-color: #45a049;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      min-height: 50px;
+    }
+    #video, #canvas {
+      border: 1px solid #ddd;
+      margin-top: 10px;
+    }
+    .prediction {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>ASL Gesture Recognition</h1>
+  
+  <div class="container">
+    <div class="input-section">
+      <div>
+        <button id="webcamBtn" class="btn">Use Webcam</button>
+      </div>
+      <div>
+        <label for="uploadInput" class="btn">Upload Image</label>
+        <input type="file" id="uploadInput" accept="image/*" style="display:none;">
+      </div>
+    </div>
+    
+    <div id="webcamContainer" class="hidden">
+      <video id="video" width="400" height="300" autoplay></video>
+      <br>
+      <button id="captureBtn" class="btn">Capture Image</button>
+    </div>
+    
+    <canvas id="canvas" width="400" height="300" class="hidden"></canvas>
+    
+    <div id="result">
+      <p>Prediction will appear here</p>
+    </div>
+  </div>
+  
+  <script>
+    const webcamBtn = document.getElementById('webcamBtn');
+    const uploadInput = document.getElementById('uploadInput');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('captureBtn');
+    const resultDiv = document.getElementById('result');
+    const webcamContainer = document.getElementById('webcamContainer');
+
+    // Handle webcam access
+    webcamBtn.addEventListener('click', async () => {
+      try {
+        webcamContainer.classList.remove('hidden');
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      } catch (error) {
+        console.error('Error accessing webcam:', error);
+        resultDiv.innerHTML = `<p>Error accessing webcam: ${error.message}</p>`;
+      }
+    });
+
+    // Capture image from webcam
+    captureBtn.addEventListener('click', () => {
+      canvas.classList.remove('hidden');
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      canvas.toBlob(blob => {
+        sendImage(blob);
+      }, 'image/jpeg');
+    });
+
+    // Handle file upload
+    uploadInput.addEventListener('change', () => {
+      const file = uploadInput.files[0];
+      if (file) {
+        sendImage(file);
+      }
+    });
+
+    // Send image to the backend
+    function sendImage(blob) {
+      resultDiv.innerHTML = '<p>Processing...</p>';
+      
+      const formData = new FormData();
+      formData.append('file', blob, 'image.jpg');
+      
+      fetch('/predict', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Server responded with an error');
+        }
+        return response.json();
+      })
+      .then(data => {
+        resultDiv.innerHTML = `
+          <div class="prediction">
+            <h3>Detected Letter: ${data.letter}</h3>
+            <p>Confidence: ${(data.confidence * 100).toFixed(2)}%</p>
+          </div>
+        `;
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        resultDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+      });
+    }
+  </script>
+</body>
+</html> 
