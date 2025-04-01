@@ -49,9 +49,32 @@
     .prediction {
       font-size: 24px;
       font-weight: bold;
+      margin: 20px 0;
+    }
+    .prediction-details {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+    .model-result {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      width: 30%;
+    }
+    .model-name {
+      font-weight: bold;
+      color: #333;
     }
     .hidden {
       display: none;
+    }
+    .final-result {
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #f0f8ff;
+      border-radius: 8px;
+      font-size: 20px;
     }
   </style>
 </head>
@@ -78,7 +101,7 @@
     <canvas id="canvas" width="400" height="300" class="hidden"></canvas>
     
     <div id="result">
-      <p>Prediction will appear here</p>
+      <p>Upload an image or use webcam to see predictions</p>
     </div>
   </div>
   
@@ -140,17 +163,56 @@
         return response.json();
       })
       .then(data => {
-        resultDiv.innerHTML = `
-          <div class="prediction">
-            <h3>Detected Letter: ${data.letter}</h3>
-            <p>Confidence: ${(data.confidence * 100).toFixed(2)}%</p>
-          </div>
-        `;
+        displayResults(data);
       })
       .catch(error => {
         console.error('Error:', error);
         resultDiv.innerHTML = `<p>Error: ${error.message}</p>`;
       });
+    }
+    
+    // Display prediction results
+    function displayResults(data) {
+      let html = '';
+      
+      // Final consensus result
+      if (data.consensus) {
+        html += `
+          <div class="prediction">
+            <h2>Sign Detected: ${data.consensus.class}</h2>
+          </div>
+          <div class="final-result">
+            <p>Confidence: ${(data.consensus.confidence * 100).toFixed(2)}%</p>
+          </div>
+        `;
+      }
+      
+      // Show individual model results if available
+      html += '<div class="prediction-details">';
+      
+      if (data.cnn) {
+        html += `
+          <div class="model-result">
+            <div class="model-name">CNN Model</div>
+            <p>Prediction: ${data.cnn.class}</p>
+            <p>Confidence: ${(data.cnn.confidence * 100).toFixed(2)}%</p>
+          </div>
+        `;
+      }
+      
+      if (data.knn) {
+        html += `
+          <div class="model-result">
+            <div class="model-name">KNN Model</div>
+            <p>Prediction: ${data.knn.class}</p>
+            <p>Confidence: ${(data.knn.confidence * 100).toFixed(2)}%</p>
+          </div>
+        `;
+      }
+      
+      html += '</div>';
+      
+      resultDiv.innerHTML = html;
     }
   </script>
 </body>
